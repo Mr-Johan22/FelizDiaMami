@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Para mi mamá Mariela 💖</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💖</text></svg>">
+    <style>
+        /* --- ESTILOS BASE --- */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #1a0a1a);
+            overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+        }
+        
+        #canvas-bg, #canvas-rosas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #canvas-bg { z-index: 1; } 
+        #canvas-rosas { z-index: 2; pointer-events: none; } 
+
+        #ui-layer { position: absolute; top: 5vh; width: 100%; text-align: center; z-index: 10; pointer-events: none; }
+        h1 { color: #fff; font-size: 26px; margin: 0 0 10px 0; text-shadow: 0 0 15px rgba(255, 105, 180, 0.8); padding: 0 15px; }
+        #instruction {
+            color: #ffb6c1; font-size: 16px; font-weight: bold; animation: pulse 1.5s infinite;
+            background: rgba(0,0,0,0.3); display: inline-block; border-radius: 20px; padding: 5px 15px;
+        }
+        #card-wrapper {
+            position: absolute; bottom: -300px; left: 50%; transform: translateX(-50%);
+            width: 320px; height: 220px; z-index: 20;
+            transition: bottom 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; justify-content: center; align-items: flex-end;
+        }
+        #card-wrapper.show { bottom: 12vh; }
+        .container { position: relative; cursor: pointer; width: 100%; height: 100%; transition: transform 0.5s ease; }
+        .envelope { width: 100%; height: 100%; background: #e0b0ff; position: absolute; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 2; }
+        .envelope::before {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            border-left: 160px solid #d49aee; border-right: 160px solid #d49aee;
+            border-top: 110px solid transparent; border-bottom: 110px solid #b366db; border-radius: 0 0 10px 10px; z-index: 3;
+        }
+        .flap {
+            position: absolute; top: 0; left: 0; border-left: 160px solid transparent; border-right: 160px solid transparent;
+            border-top: 120px solid #c87be3; transform-origin: top; transition: transform 0.6s ease-in-out, z-index 0.2s; z-index: 4;
+        }
+        .letter {
+            position: absolute; bottom: 10px; width: 85%; height: 90%; background: #fffdf2; color: #333;
+            padding: 25px 15px; box-sizing: border-box; text-align: center; border-radius: 8px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); z-index: 1; transition: all 0.8s ease-in-out;
+            display: flex; flex-direction: column; overflow: hidden; left: 7.5%;
+        }
+        .letter::-webkit-scrollbar { width: 6px; }
+        .letter::-webkit-scrollbar-thumb { background-color: #d49aee; border-radius: 10px; }
+        .letter h2 { color: #d63384; font-size: 22px; margin: 0 0 10px 0; text-shadow: 1px 1px 2px rgba(214, 51, 132, 0.2); }
+        .letter-content { font-size: 15px; line-height: 1.6; color: #444; margin: 0; text-align: justify; opacity: 0; transition: opacity 1s ease-in-out 0.8s; display: flex; flex-direction: column; align-items: center; }
+        
+        .polaroid {
+            background: white; padding: 10px 10px 15px 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transform: rotate(-2deg); margin: 10px 0 20px 0; width: 85%; transition: transform 0.3s;
+            cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent;
+        }
+        .polaroid:active { transform: scale(0.98) rotate(0deg); }
+        .polaroid img { width: 100%; height: 180px; object-fit: cover; border: 1px solid #ddd; border-radius: 2px; background: #f0f0f0; display: block; transition: opacity 0.3s; }
+        .polaroid-caption { text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 16px; color: #333; font-weight: bold; margin-top: 10px; min-height: 24px; }
+        .btn-siguiente { background-color: #d63384; color: white; border: none; border-radius: 15px; padding: 5px 15px; font-size: 12px; font-weight: bold; margin-top: 8px; animation: pulse-btn 1.5s infinite; cursor: pointer; }
+        
+        /* EL NUEVO BOTÓN DE ABRAZO */
+        .btn-abrazo {
+            background: linear-gradient(45deg, #ff007f, #ff00cc); color: white; font-size: 16px; font-weight: bold;
+            padding: 12px 20px; border: none; border-radius: 25px; margin-top: 20px; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 0, 127, 0.4); transition: transform 0.2s; width: 90%;
+        }
+        .btn-abrazo:active { transform: scale(0.95); }
+
+        .container.open .flap { transform: rotateX(180deg); z-index: 1; }
+        .container.expanded { transform: translateY(20px); }
+        .container.expanded .letter {
+            transform: translateY(-200px); width: 350px; left: -15px; height: 480px; z-index: 5;
+            border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 40px rgba(214, 51, 132, 0.4);
+            overflow-y: auto; background: #fffafa; padding-bottom: 30px;
+        }
+        .container.expanded .letter-content { opacity: 1; }
+        .click-hint { position: absolute; top: -40px; width: 100%; text-align: center; color: #FFD700; font-weight: bold; animation: pulse 1.5s infinite; pointer-events: none; }
+        
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; text-shadow: 0 0 10px #ffb6c1; } 100% { transform: scale(1); opacity: 0.8; } }
+        @keyframes pulse-btn { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(214, 51, 132, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(214, 51, 132, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(214, 51, 132, 0); } }
+        
+        .sparkle-particle { position: absolute; pointer-events: none; border-radius: 50%; animation: floatUp 1s ease-out forwards; z-index: 50; }
+        @keyframes floatUp { 0% { transform: scale(1) translateY(0); opacity: 1; } 100% { transform: scale(0) translateY(-50px); opacity: 0; } }
+
+        /* LLUVIA DE CORAZONES (ABRAZO VIRTUAL) */
+        .lluvia-corazon {
+            position: absolute; pointer-events: none; z-index: 100;
+            animation: caerCorazon linear forwards;
+        }
+        @keyframes caerCorazon {
+            0% { transform: translateY(-10vh) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg) scale(0.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <h1>¡Feliz Día, Mariela! 💖</h1>
+        <p id="instruction">Toca la pantalla 6 veces para crear tu regalo...</p>
+    </div>
+
+    <canvas id="canvas-bg"></canvas>
+    <canvas id="canvas-rosas"></canvas>
+
+    <div id="card-wrapper">
+        <div class="container" id="cardContainer" onclick="abrirCarta()">
+            <div class="click-hint" id="hint-text">¡Tienes una carta! Toca para abrir ✨</div>
+            <div class="flap"></div>
+            <div class="envelope"></div>
+            <div class="letter">
+                <h2>Para la mejor mamá 💖</h2>
+                <div class="letter-content">
+                    
+                    <div class="polaroid" onclick="cambiarFoto(event)">
+                        <img id="foto-album" src="Fotos/foto1.jpg" alt="Álbum familiar">
+                        <div class="polaroid-caption" id="texto-album">Mi hermosa mamá ✨</div>
+                        <button class="btn-siguiente">Siguiente foto 👆</button>
+                    </div>
+
+                    <p>Hoy quería regalarte algo diferente. Sé que a veces me la paso entre códigos y pantallas, pero hoy usé eso para hacerte sonreír.</p>
+                    <p>Desde que tengo memoria, has sido mi refugio, mi ejemplo de fuerza y mi mayor apoyo. Gracias a tu paciencia inagotable y a cómo sostienes mi mano, he llegado hasta aquí.</p>
+                    <p>No hay regalo en el mundo que iguale tu amor, pero espero que este pequeño jardín digital y estas fotos te recuerden lo indispensable que eres para nosotros.</p>
+                    <p>Eres nuestra luz y la magia de todos mis días. ¡Te quiero muchísimo!</p>
+                    <p style="text-align: right; color: #d63384; font-weight: bold; width: 100%;">Con amor infinito ✨</p>
+
+                    <button class="btn-abrazo" onclick="enviarAbrazo(event)">🤗 Recibir Abrazo Virtual</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fotos = [
+            { src: 'Fotos/foto1.jpg', texto: 'Mi hermosa mamá ✨' },
+            { src: 'Fotos/foto2.jpg', texto: 'Nuestra reina 👑' },
+            { src: 'Fotos/foto3.jpg', texto: 'Con papá 💕' },
+            { src: 'Fotos/foto4.jpg', texto: 'Tú y yo 🥰' },
+            { src: 'Fotos/foto5.jpg', texto: 'Con mi hermano 👦' },
+            { src: 'Fotos/foto6.jpg', texto: 'Todos juntos 👨‍👩‍👦‍👦' }
+        ];
+        
+        let indiceFoto = 0;
+        
+        function cambiarFoto(event) {
+            event.stopPropagation();
+            const imgElement = document.getElementById('foto-album');
+            const txtElement = document.getElementById('texto-album');
+            
+            imgElement.style.opacity = '0.5';
+            setTimeout(() => {
+                indiceFoto = (indiceFoto + 1) % fotos.length;
+                imgElement.src = fotos[indiceFoto].src;
+                txtElement.innerText = fotos[indiceFoto].texto;
+                imgElement.style.opacity = '1';
+                crearParticulaInteractiva(event.clientX, event.clientY);
+            }, 150);
+        }
+
+        const canvasBg = document.getElementById('canvas-bg');
+        const ctxBg = canvasBg.getContext('2d');
+        const canvasRosas = document.getElementById('canvas-rosas');
+        const ctxRosas = canvasRosas.getContext('2d');
+        const instruction = document.getElementById('instruction');
+        const cardWrapper = document.getElementById('card-wrapper');
+
+        function resize() {
+            canvasBg.width = window.innerWidth;
+            canvasBg.height = window.innerHeight;
+            canvasRosas.width = window.innerWidth;
+            canvasRosas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let rosasPlantadas = 0;
+        const maxRosas = 6;
+        const posicionesRosas = [];
+        const colores = ["#FF1493", "#DD3377", "#FF69B4", "#C71585", "#ff0066"];
+        let faseCompletada = false;
+
+        const luciernagas = [];
+        for(let i=0; i<30; i++) {
+            luciernagas.push({ x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, radio: Math.random() * 2 + 1, vx: Math.random() * 1 - 0.5, vy: Math.random() * 1 - 0.5, brillo: Math.random() });
+        }
+
+        function animarFondo() {
+            ctxBg.fillStyle = "rgba(26, 10, 26, 0.3)"; 
+            ctxBg.fillRect(0, 0, canvasBg.width, canvasBg.height);
+
+            luciernagas.forEach(l => {
+                l.x += l.vx; l.y += l.vy;
+                if(l.x < 0 || l.x > canvasBg.width) l.vx *= -1;
+                if(l.y < 0 || l.y > canvasBg.height) l.vy *= -1;
+                l.brillo += Math.random() * 0.1 - 0.05;
+                if(l.brillo < 0.2) l.brillo = 0.2;
+                if(l.brillo > 1) l.brillo = 1;
+                ctxBg.beginPath(); ctxBg.arc(l.x, l.y, l.radio, 0, Math.PI * 2);
+                ctxBg.fillStyle = `rgba(255, 215, 0, ${l.brillo})`; ctxBg.fill();
+            });
+            requestAnimationFrame(animarFondo);
+        }
+        animarFondo();
+
+        function crearParticulaInteractiva(x, y) {
+            const part = document.createElement('div');
+            part.className = 'sparkle-particle';
+            part.style.left = x + 'px'; part.style.top = y + 'px';
+            if(Math.random() > 0.5) {
+                part.style.width = '8px'; part.style.height = '8px'; part.style.background = '#FFD700'; part.style.boxShadow = '0 0 10px #FFD700';
+            } else {
+                part.innerHTML = '💖'; part.style.fontSize = (Math.random() * 10 + 10) + 'px'; part.style.background = 'transparent';
+            }
+            document.body.appendChild(part);
+            setTimeout(() => part.remove(), 1000);
+        }
+
+        window.addEventListener('pointermove', (e) => { if(Math.random() > 0.6) crearParticulaInteractiva(e.clientX, e.clientY); });
+
+        function dibujarRosa(x, y, color) {
+            ctxRosas.save(); ctxRosas.translate(x, y);
+            let numPetalos = 0; const maxPetalos = 40; 
+            function animarPetalos() {
+                if (numPetalos >= maxPetalos) { ctxRosas.restore(); return; }
+                let angle = numPetalos * 137.5 * (Math.PI / 180); 
+                let radius = numPetalos * 1.5;
+                let px = Math.cos(angle) * radius; let py = Math.sin(angle) * radius; let size = 5 + numPetalos * 0.7;
+                ctxRosas.beginPath(); ctxRosas.arc(px, py, size, 0, Math.PI * 2); ctxRosas.fillStyle = color; ctxRosas.fill();
+                ctxRosas.lineWidth = 1; ctxRosas.strokeStyle = "rgba(0, 0, 0, 0.2)"; ctxRosas.stroke();
+                numPetalos++; requestAnimationFrame(animarPetalos);
+            }
+            animarPetalos();
+        }
+
+        function dibujarLazo(x, y) {
+            ctxRosas.save(); ctxRosas.translate(x, y);
+            ctxRosas.shadowColor = "rgba(0,0,0,0.5)"; ctxRosas.shadowBlur = 10; ctxRosas.shadowOffsetY = 5;
+            ctxRosas.beginPath(); ctxRosas.moveTo(0, 0); ctxRosas.bezierCurveTo(-70, -50, -70, 50, 0, 0); ctxRosas.fillStyle = "#FFD700"; ctxRosas.fill();
+            ctxRosas.beginPath(); ctxRosas.moveTo(0, 0); ctxRosas.bezierCurveTo(70, -50, 70, 50, 0, 0); ctxRosas.fillStyle = "#FF4500"; ctxRosas.fill();
+            ctxRosas.beginPath(); ctxRosas.moveTo(0, 0); ctxRosas.quadraticCurveTo(-20, 70, -30, 120); ctxRosas.lineWidth = 15; ctxRosas.strokeStyle = "#FFD700"; ctxRosas.stroke();
+            ctxRosas.beginPath(); ctxRosas.moveTo(0, 0); ctxRosas.quadraticCurveTo(20, 70, 30, 110); ctxRosas.lineWidth = 15; ctxRosas.strokeStyle = "#FF4500"; ctxRosas.stroke();
+            ctxRosas.beginPath(); ctxRosas.arc(0, 0, 12, 0, Math.PI * 2); ctxRosas.fillStyle = "#b32400"; ctxRosas.fill();
+            ctxRosas.restore();
+        }
+
+        function completarEscena() {
+            instruction.style.opacity = "0"; 
+            const baseRamoX = canvasRosas.width / 2;
+            const baseRamoY = canvasRosas.height * 0.85;
+
+            ctxRosas.globalCompositeOperation = 'destination-over';
+            posicionesRosas.forEach(pos => {
+                ctxRosas.beginPath();
+                ctxRosas.moveTo(pos.x, pos.y);
+                ctxRosas.bezierCurveTo(pos.x, pos.y + 80, baseRamoX, baseRamoY - 80, baseRamoX, baseRamoY);
+                ctxRosas.strokeStyle = "#228B22";
+                ctxRosas.lineWidth = 5;
+                ctxRosas.stroke();
+            });
+            ctxRosas.globalCompositeOperation = 'source-over';
+
+            setTimeout(() => {
+                dibujarLazo(baseRamoX, baseRamoY);
+                setTimeout(() => {
+                    cardWrapper.classList.add('show');
+                    faseCompletada = true;
+                    setTimeout(() => {
+                        instruction.innerText = "¡El jardín floreció! 🌸";
+                        instruction.style.opacity = "1";
+                    }, 500);
+                }, 800);
+            }, 400);
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            if(isOpened) return;
+            
+            crearParticulaInteractiva(e.clientX, e.clientY);
+            if (rosasPlantadas >= maxRosas) return;
+            
+            let touchY = e.clientY;
+            if (touchY > canvasRosas.height * 0.5) touchY = canvasRosas.height * 0.5;
+
+            const colorAleatorio = colores[Math.floor(Math.random() * colores.length)];
+            posicionesRosas.push({ x: e.clientX, y: touchY });
+            
+            dibujarRosa(e.clientX, touchY, colorAleatorio);
+            rosasPlantadas++;
+            instruction.innerText = `Rosas plantadas: ${rosasPlantadas} de ${maxRosas}`;
+
+            if (rosasPlantadas === maxRosas) {
+                setTimeout(completarEscena, 600);
+            }
+        });
+
+        let isOpened = false;
+        function abrirCarta() {
+            if(!faseCompletada || isOpened) return;
+            const container = document.getElementById('cardContainer');
+            const hint = document.getElementById('hint-text');
+            
+            container.classList.add('open');
+            hint.style.opacity = '0';
+            
+            for(let i=0; i<15; i++) {
+                setTimeout(() => {
+                    crearParticulaInteractiva(window.innerWidth/2 + (Math.random()*200 - 100), window.innerHeight*0.7 + (Math.random()*100 - 50));
+                }, i * 50);
+            }
+            
+            setTimeout(() => { container.classList.add('expanded'); isOpened = true; }, 600);
+        }
+
+        // --- LA FUNCIÓN DEL ABRAZO VIRTUAL ---
+        function enviarAbrazo(event) {
+            event.stopPropagation(); // Evita que pase al click de la carta
+            
+            // Cambiar texto del botón
+            const btn = event.target;
+            btn.innerText = "¡Abrazo Enviado! 🥰";
+            btn.style.background = "linear-gradient(45deg, #32CD32, #228B22)"; // Se pone verde de éxito
+            
+            // Generar 80 corazones cayendo por la pantalla
+            const arrayCorazones = ['💖', '💕', '💗', '✨', '🌸', '🥰'];
+            
+            for(let i = 0; i < 80; i++) {
+                setTimeout(() => {
+                    const corazon = document.createElement('div');
+                    corazon.className = 'lluvia-corazon';
+                    corazon.innerText = arrayCorazones[Math.floor(Math.random() * arrayCorazones.length)];
+                    
+                    // Posición horizontal aleatoria
+                    corazon.style.left = Math.random() * 100 + 'vw';
+                    
+                    // Tamaño aleatorio
+                    corazon.style.fontSize = (Math.random() * 20 + 15) + 'px';
+                    
+                    // Duración de la caída aleatoria
+                    corazon.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    
+                    document.body.appendChild(corazon);
+                    
+                    // Limpiar DOM después
+                    setTimeout(() => corazon.remove(), 5000);
+                }, i * 50); 
+            }
+        }
+    </script>
+</body>
+</html>
